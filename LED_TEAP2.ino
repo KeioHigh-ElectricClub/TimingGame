@@ -1,10 +1,11 @@
+#include <Arduino.h>
 #include <FastLED.h>
 
 #define NUM_LEDS 20  // LEDの数（仮）
 #define DATA_PIN 6   //ピン番号
 
 unsigned long time;  //光始めてからの時間
-int tt;
+double tt;
 int m;
 bool isFlowing;
 
@@ -24,14 +25,16 @@ void led_start(double speed) {
   FastLED.show();
   time = millis();
   isFlowing = true;
-  tt = 1.0 / speed * 1000;
+  // tt = 1.0 / speed * 1000;
+  tt = speed / 1000.0;
 }
 
 void led_stop() { isFlowing = false; }
 
 void led_loop() {
-  if ((millis() - time) / tt != m && isFlowing) {
-    m = (millis() - time) / tt;
+  // if ((millis() - time) / tt != m && isFlowing) {
+  if (tt * (millis() - time) != m && isFlowing) {
+    m = tt * (millis() - time);
     if (m >= 2) {
       leds[m - 2] = CRGB(0, 0, 0);
     }
@@ -45,7 +48,6 @@ void led_reset() {
     leds[i] = CRGB(0, 0, 0);
   }
   FastLED.show();
-  time = 0;
 }
 
 int led_getPosition() { return m; }

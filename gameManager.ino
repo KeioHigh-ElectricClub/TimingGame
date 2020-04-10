@@ -1,4 +1,4 @@
-
+#include <Arduino.h>
 // void led_begin(byte pin) ←led関係の処理を初期化
 // void led_start(double speed) ←　ledに光を流すのを始める
 // void led_stop()
@@ -28,8 +28,8 @@ int gameManager() {
   int point = 0;
 
   byte counter = 1;
-
-  while (true) {
+  const byte countMax = 10;
+  while (counter <= 10) {
     tone(TONE_PIN, 1000, 500);
     delay(500);
 
