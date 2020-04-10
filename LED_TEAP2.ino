@@ -5,8 +5,8 @@
 #define DATA_PIN 6   //ピン番号
 
 unsigned long time;  //光始めてからの時間
-double tt;
-int m;
+double speedMillis;
+int position;
 bool isFlowing;
 
 CRGB leds[NUM_LEDS];
@@ -25,20 +25,20 @@ void led_start(double speed) {
   FastLED.show();
   time = millis();
   isFlowing = true;
-  // tt = 1.0 / speed * 1000;
-  tt = speed / 1000.0;
+  // speedMillis = 1.0 / speed * 1000;
+  speedMillis = speed / 1000.0;
 }
 
 void led_stop() { isFlowing = false; }
 
 void led_loop() {
-  // if ((millis() - time) / tt != m && isFlowing) {
-  if (tt * (millis() - time) != m && isFlowing) {
-    m = tt * (millis() - time);
-    if (m >= 2) {
-      leds[m - 2] = CRGB(0, 0, 0);
+  // if ((millis() - time) / speedMillis != position && isFlowing) {
+  if (speedMillis * (millis() - time) != position && isFlowing) {
+    position = speedMillis * (millis() - time);
+    if (position >= 2) {
+      leds[position - 2] = CRGB(0, 0, 0);
     }
-    leds[m + 1] = CRGB(255, 0, 0);
+    leds[position + 1] = CRGB(255, 0, 0);
     FastLED.show();
   }
 }
@@ -50,4 +50,4 @@ void led_reset() {
   FastLED.show();
 }
 
-int led_getPosition() { return m; }
+int led_getPosition() { return position; }
