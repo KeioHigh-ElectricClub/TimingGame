@@ -33,8 +33,9 @@ void led_stop() { isFlowing = false; }
 
 void led_loop() {
   // if ((millis() - time) / speedMillis != position && isFlowing) {
-  if (speedMillis * (millis() - time) != position && isFlowing) {
-    position = speedMillis * (millis() - time);
+  int calcPosition = speedMillis * (millis() - time);
+  if (calcPosition != position && isFlowing) {
+    position = calcPosition;
     if (position >= 2) {
       leds[position - 2] = CRGB(0, 0, 0);
     }
