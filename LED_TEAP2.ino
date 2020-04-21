@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <FastLED.h>
 
-#define NUM_LEDS 20  // LEDの数（仮）
+#define NUM_LEDS 60  // LEDの数（仮）
 #define DATA_PIN 6   //ピン番号
 
 unsigned long time;  //光始めてからの時間
@@ -11,10 +11,10 @@ bool isFlowing;
 
 CRGB leds[NUM_LEDS];
 
-void led_begin(byte pin) {
+void led_begin() {
   //セットアップ
 
-  FastLED.addLeds<NEOPIXEL, pin>(leds, NUM_LEDS);
+  FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);
   FastLED.setBrightness(64);  //輝度を64に設定
   delay(500);
 }
@@ -36,19 +36,24 @@ void led_loop() {
   int calcPosition = speedMillis * (millis() - time);
   if (calcPosition != position && isFlowing) {
     position = calcPosition;
+    if (NUM_LEDS <= position) return;
     if (position >= 2) {
       leds[position - 2] = CRGB(0, 0, 0);
     }
-    leds[position + 1] = CRGB(255, 0, 0);
+    if (position + 1 < NUM_LEDS) {
+      leds[position + 1] = CRGB(255, 0, 0);
+    }
+
     FastLED.show();
   }
 }
 
 void led_reset() {
   for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = CRGB(0, 0, 0);
+    leds[i] = CRGB::Black;
   }
   FastLED.show();
+  position = 0;
 }
 
 int led_getPosition() { return position; }

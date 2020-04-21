@@ -6,14 +6,15 @@ void setup() {
   while (!Serial) {
   };
   gameSetup();
-  nfc_setup();
+  if (!nfc_setup()) {
+    Serial.println("initializing NFC failed");
+  }
   //  ゲーム初期化関数
 }
 void loop() {
-  nfc_reduce_credit();
+  nfc_reduce_credit(12);
 
   byte point = gameManager();
 
-  nfc_write_point(point);
-  nfc_reset();
+  nfc_write_point(point, 12);
 }

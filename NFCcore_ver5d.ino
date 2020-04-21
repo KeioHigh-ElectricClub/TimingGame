@@ -3,8 +3,8 @@
 
 #define SerialSpeed 9600   // 変更必須
 #define boothNum 255       // 変更必須
-#define RST_PIN 9          // NFC RSTピン(SPI通信時には設定必要)  変更必須
-#define SS_PIN 10          // NFC SDAピン(SPI通信時には設定必要)  変更必須
+#define RST_PIN 48          // NFC RSTピン(SPI通信時には設定必要)  変更必須
+#define SS_PIN 49          // NFC SDAピン(SPI通信時には設定必要)  変更必須
 #define defaultCredit 5    // デフォルトのクレジット数(変更可能)
 /*新歓専用関数
    bool nfc_setup()
@@ -116,7 +116,7 @@ byte randomID = 0;
 
 
 
-void nfc_setup() {
+bool nfc_setup() {
   Serial.begin(SerialSpeed);
   Serial.println(F("begin Serial communication"));
   while (!Serial);
@@ -131,11 +131,22 @@ void nfc_setup() {
 
 
 bool nfc_reduce_credit(byte block) {
-  nfc_wait_touch() ;
+  nfc_wait_touch();
   if (!ApplePay()) {
     applepay = false;
-    byte readData[18];
-    byte writeData[16];
+    byte readData[18] {
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0
+    };
+    byte writeData[16] = {
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0
+    };
     if (!nfc_read(readData, block)) return false;
 
     if (readData[2] != 0) {
@@ -151,30 +162,31 @@ bool nfc_reduce_credit(byte block) {
       writeData[i + 4] = readData[i];
     }
 
-    randomID = random(0, 256);
+    randomID = random(1, 256);
     writeData[0] = readData[0] - 1;
     writeData[1] = readData[1];
-    writeData[2] = boothNum;
+    writeData[2] = randomID;
     writeData[3] = creditReduce_code;
-    writeData[6] = randomID;
 
     if (writeData[0] < 0) {
-      //      Serial.println(F("------------------------------"));
-      //      Serial.println(F("！クレジットが足りません！"));
-      //      Serial.println();
-      //      Serial.println(F("カードをはずしてください"));
-      //      Serial.println();
-      //      Serial.println(F("------------------------------"));
+      Serial.println(F("------------------------------"));
+      Serial.println(F("！クレジットが不足しています！"));
+      Serial.println();
+      Serial.println(F("カードをはずしてください"));
+      Serial.println();
+      Serial.println(F("------------------------------"));
       return false;
     }
 
     if (!nfc_write(writeData, block)) return false;
 
-    //    Serial.println(F("------------------------------"));
-    //    Serial.println();
-    //    Serial.println(F("ゲームを開始！"));
-    //    Serial.println();
-    //    Serial.println(F("------------------------------"));
+    Serial.println(F("------------------------------"));
+    Serial.println();
+    Serial.println("クレジットを1消費しました");
+    delay(1000);
+    Serial.println(F("ゲームスタート！"));
+    Serial.println();
+    Serial.println(F("------------------------------"));
     return true;
   }
   applepay = true;
@@ -182,20 +194,29 @@ bool nfc_reduce_credit(byte block) {
 }
 
 
-bool nfc_write_point(byte addPoint,byte block) {
+bool nfc_write_point(byte addPoint, byte block) {
   if (applepay == false) {
     Serial.println(F("------------------------------"));
     Serial.println(F("獲得ポイントをNFCカードに記録します。カードをかざしてください"));
 
-
     nfc_wait_touch();
+    byte nfc_readData[18] = {
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0
+    };
+    byte nfc_writeData[16] = {
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0
+    };
 
-
-    byte nfc_readData[18];
-    byte nfc_writeData[16];
     if (!nfc_read(nfc_readData, block)) return false;
 
-    if (nfc_readData[6] != randomID) {
+    if (nfc_readData[2] != randomID) {
       Serial.println(F("------------------------------"));
       Serial.println(F("ゲーム開始時にかざしたカードをかざしてください"));
       Serial.println(F("------------------------------"));
@@ -208,9 +229,8 @@ bool nfc_write_point(byte addPoint,byte block) {
 
     nfc_writeData[0] = nfc_readData[0];
     nfc_writeData[1] = nfc_readData[1] + addPoint;
-    nfc_writeData[2] = 0x00;
+    nfc_writeData[2] = 0;
     nfc_writeData[3] = pointWrite_code;
-    nfc_writeData[6] = boothNum;
     if (!nfc_write(nfc_writeData, block)) return false;
 
     Serial.println(F("------------------------------"));
@@ -219,7 +239,7 @@ bool nfc_write_point(byte addPoint,byte block) {
     Serial.print(F("残りクレジット　”　"));
     Serial.print(nfc_writeData[0]);
     Serial.println(F("　”"));
-    Serial.print(F("残りポイント　”　"));
+    Serial.print(F("現在のポイント　”　"));
     Serial.print(nfc_writeData[1]);
     Serial.println(F("　”"));
     Serial.println();
@@ -243,7 +263,7 @@ bool nfc_clear_block(byte block) {
 
   nfc_wait_touch();
 
-  byte nfc_defaultData[16];
+  byte nfc_defaultData[16] ;
   for (byte i = 0; i < 16; i++) {
     nfc_defaultData[i] = 0;
   }
@@ -260,10 +280,21 @@ bool nfc_restore_block(byte block) {
   nfc_wait_touch();
 
 
-  byte nfc_backup_readData[18];
-  byte nfc_backup_writeData[16];
+  byte nfc_backup_readData[18] {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0
+  };
+  byte nfc_backup_writeData[16] = {
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0
+  };
+  
   if (!nfc_read(nfc_backup_readData, block)) return false;
-
   for (byte i = 0; i < 11; i++) {
     nfc_backup_writeData[i] = nfc_backup_readData[i + 4];
   }
@@ -324,6 +355,9 @@ bool nfc_read(byte nfc_readData[], byte block) {
 
   if (!nfc_auth_a(block)) return false;
   byte size = 18; //18固定
+  for(byte i = 0; i<16; i++) {
+    nfc_readData[i] = 0;
+  }
   status = (MFRC522::StatusCode)mfrc522.MIFARE_Read(block, nfc_readData,  &size);
   if (status != MFRC522::STATUS_OK) {
     Serial.println(F("nfc_read() failed"));
@@ -335,6 +369,7 @@ bool nfc_read(byte nfc_readData[], byte block) {
   for (byte i = 0; i < 16; i++) {
     Serial.print(nfc_readData[i]);
     Serial.print(" ");
+    if((i%4) == 3) Serial.print(F("/"));
   }
   Serial.println();
 
@@ -366,6 +401,7 @@ bool nfc_write(byte WriteData[], byte block) { //書き込む配列、書き込�
   for (byte i = 0; i < 16; i++) {
     Serial.print(WriteData[i]);
     Serial.print(" ");
+    if((i%4) == 3) Serial.print(F("/"));
   }
   Serial.println();
   status = (MFRC522::StatusCode)mfrc522.MIFARE_Write(block, WriteData, size);
