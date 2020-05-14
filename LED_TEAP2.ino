@@ -14,7 +14,7 @@ CRGB leds[NUM_LEDS];
 void led_begin() {
   //セットアップ
 
-  FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);
+  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(64);  //輝度を64に設定
   delay(500);
 }
@@ -30,6 +30,11 @@ void led_start(double speed) {
 }
 
 void led_stop() { isFlowing = false; }
+
+void led_turnon_yellow(int position) {
+  leds[position] = CRGB::Yellow;
+  FastLED.show();
+}
 
 void led_loop() {
   // if ((millis() - time) / speedMillis != position && isFlowing) {

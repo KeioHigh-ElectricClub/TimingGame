@@ -1,4 +1,4 @@
 {
-    "sketch": "timing.ino",
+    "sketch": "timing2.ino",
     "board": "arduino:avr:uno"
 }

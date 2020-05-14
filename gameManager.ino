@@ -16,11 +16,11 @@ void gameSetup() {
 }
 
 int gameManager() {
-  const double speedPlus = 15;
+  const double speedPlus = 8;
   const double startSpeed = 10;
   const int stopLinePosition = 50;
-  const int rangeMax = 4;
-  const int rangeMin = -4;
+  const int rangeMax = 2;
+  const int rangeMin = -2;
 
   double speed = startSpeed;
 
@@ -30,22 +30,36 @@ int gameManager() {
   byte counter = 1;
   const byte countMax = 10;
   while (counter <= countMax) {
-    tone(TONE_PIN, 1000, 500);
+    led_reset();
+    led_turnon_yellow(stopLinePosition - 1);
+    led_turnon_yellow(stopLinePosition);
+    led_turnon_yellow(stopLinePosition + 1);
+
     Serial.print(counter);
     Serial.println("回目");
-    delay(500);
+
+    player.playMp3Folder(counter);
+
+    delay(1500);
+
+    tone(TONE_PIN, 1000, 500);
+    delay(1000);
+    tone(TONE_PIN, 1000, 500);
+    delay(1000);
+
+    player.playMp3Folder(13);
 
     Serial.println("Start!");
-    led_reset();
+    delay(1900);
+
     led_start(speed);
 
     while (led_getPosition() <= NUM_LEDS - 1) {
       led_loop();
       bool isPushed = !digitalRead(BUTTON_PIN);
+      tone(TONE_PIN, 1000, 10);
       if (!isPushed) continue;
       led_stop();
-      tone(TONE_PIN, 2000, 100);
-
       break;
     }
     delay(500);
@@ -54,21 +68,30 @@ int gameManager() {
     int difference = position - stopLinePosition;
     if (difference < rangeMin || rangeMax < difference) {
       Serial.println("ストップ失敗!");
-      tone(TONE_PIN, 400, 1000);
-      delay(1000);
+      player.playMp3Folder(17);
+      delay(1500);
+      player.playMp3Folder(15);
+      delay(1600);
       break;
     }
 
     Serial.println("ストップ成功!");
-    tone(TONE_PIN, 1000, 100);
-    delay(100);
-    tone(TONE_PIN, 1000, 500);
-    delay(500);
+    player.playMp3Folder(16);
 
-    point += pointPlus * counter;
+    point += pointPlus + rangeMax - abs(difference);
+
+    Serial.print("判定点からの差: ");
+    Serial.println(difference);
+    Serial.print("現在のポイント: ");
+    Serial.println(point);
 
     counter++;
     speed += speedPlus;
+
+    if (counter > 10) {
+      player.playMp3Folder(11);
+      delay(1000);
+    }
     delay(1000);
   }
 
